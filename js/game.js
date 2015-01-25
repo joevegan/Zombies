@@ -1,9 +1,14 @@
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
-canvas.width = 512;
-canvas.height = 480;
+canvas.width = 800;
+canvas.height = 640;
+/* Set canvas dynamically, not sure if thats a good idea
+ctx.canvas.width  = window.innerWidth;
+ctx.canvas.height = window.innerHeight;
+*/
 document.body.appendChild(canvas);
+
 
 // Background image
 var bgReady = false;
@@ -49,8 +54,8 @@ addEventListener("keyup", function (e) {
 
 // Reset the game when the player catches a monster
 var reset = function () {
-	hero.x = canvas.width / 2;
-	hero.y = canvas.height / 2;
+	//hero.x = canvas.width / 2;
+	//hero.y = canvas.height / 2;
 
 	// Throw the monster somewhere on the screen randomly
 	monster.x = 32 + (Math.random() * (canvas.width - 64));
@@ -127,4 +132,6 @@ requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame
 // Let's play this game!
 var then = Date.now();
 reset();
+hero.x = canvas.width / 2;
+hero.y = canvas.height / 2;
 main();
