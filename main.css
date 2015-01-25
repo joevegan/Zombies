@@ -6,3 +6,17 @@ canvas {
     display: block;
     /*width: 800px; */
 }
+
+.center {
+    margin-left: auto;
+    margin-right: auto;
+    width: 70%;
+}
+
+.playButton {
+	background:url(images/buttons/playButton.png) no-repeat;
+	width:250px; 
+	height:70px; 
+	border:none;
+}
+
