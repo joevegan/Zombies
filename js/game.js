@@ -32,7 +32,7 @@ var monsterImage = new Image();
 monsterImage.onload = function () {
 	monsterReady = true;
 };
-monsterImage.src = "images/monster.png";
+monsterImage.src = "images/bug.png";
 
 // Game objects
 var hero = {
@@ -64,16 +64,16 @@ var reset = function () {
 
 // Update game objects
 var update = function (modifier) {
-	if (38 in keysDown) { // Player holding up
+	if (38 in keysDown && (hero.y > 32 )) { // Player holding up
 		hero.y -= hero.speed * modifier;
 	}
-	if (40 in keysDown) { // Player holding down
+	if (40 in keysDown && hero.y < (canvas.height - 64)) { // Player holding down
 		hero.y += hero.speed * modifier;
 	}
-	if (37 in keysDown) { // Player holding left
+	if (37 in keysDown && (hero.x > 32) ) { // Player holding left
 		hero.x -= hero.speed * modifier;
 	}
-	if (39 in keysDown) { // Player holding right
+	if (39 in keysDown && hero.x < (canvas.width - 64)) { // Player holding right
 		hero.x += hero.speed * modifier;
 	}
 
@@ -108,7 +108,7 @@ var render = function () {
 	ctx.font = "24px Helvetica";
 	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
-	ctx.fillText("Goblins caught: " + monstersCaught, 32, 32);
+	ctx.fillText("Bugs Found: " + monstersCaught, 32, 32);
 };
 
 // The main game loop
@@ -123,6 +123,9 @@ var main = function () {
 
 	// Request to do this again ASAP
 	requestAnimationFrame(main);
+
+	// log for debugs
+	// console.log('hero.x: ' + hero.x);
 };
 
 // Cross-browser support for requestAnimationFrame
