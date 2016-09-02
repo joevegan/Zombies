@@ -1,22 +1,30 @@
 canvas {
-    padding-left: 0;
-    padding-right: 0;
-    margin-left: auto;
-    margin-right: auto;
+    padding:0;
+    margin: 0 auto;
     display: block;
     /*width: 800px; */
 }
 
 .center {
-    margin-left: auto;
-    margin-right: auto;
-    width: 70%;
+    margin: 0 auto;
+    border:solid 1px black;
+}
+.container {
+    padding:10px;
+    margin:0 auto;
 }
 
-.playButton {
-	background:url(images/buttons/playButton.png) no-repeat;
-	width:250px; 
-	height:70px; 
-	border:none;
+.button {
+	border-radius:3px;
+    border:solid 1px #0066ff;
+    padding:10px;
+    font-family:proxima-nova, sans-serif;
+    color: #0066ff;
+    background-color:white;
+    text-decoration:none;
+}
+.button:hover {
+    background-color: #0066ff; /* Green */
+    color: white;
 }
 

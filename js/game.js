@@ -36,7 +36,9 @@ monsterImage.src = "images/bug.png";
 
 // Game objects
 var hero = {
-	speed: 256 // movement in pixels per second
+	speed: 256, // movement in pixels per second
+	health:100
+
 };
 var monster = {};
 var monstersCaught = 0;
@@ -85,6 +87,7 @@ var update = function (modifier) {
 		&& monster.y <= (hero.y + 32)
 	) {
 		++monstersCaught;
+		--hero.health;
 		reset();
 	}
 };
@@ -104,11 +107,17 @@ var render = function () {
 	}
 
 	// Score
-	ctx.fillStyle = "rgb(250, 250, 250)";
-	ctx.font = "24px Helvetica";
+	ctx.fillStyle = "rgb(0, 102, 255)";
+	ctx.font = "16px proxima-nova, sans-serif";
 	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
 	ctx.fillText("Bugs Found: " + monstersCaught, 32, 32);
+	
+	ctx.fillStyle = "rgb(0, 102, 255)";
+	ctx.font = "16px proxima-nova, sans-serif";
+	ctx.textAlign = "start";
+	ctx.textBaseline = "top";
+	ctx.fillText("Health: " + hero.health, 32, 32);	
 };
 
 // The main game loop
