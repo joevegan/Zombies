@@ -37,10 +37,13 @@ monsterImage.src = "images/bug.png";
 // Game objects
 var hero = {
 	speed: 256, // movement in pixels per second
-	health:100
-
+	health:100,
+        bag:[],
+	ammo:20
 };
-var monster = {};
+var monster= {
+	speed:10
+};
 var monstersCaught = 0;
 
 // Handle keyboard controls
@@ -87,8 +90,12 @@ var update = function (modifier) {
 		&& monster.y <= (hero.y + 32)
 	) {
 		++monstersCaught;
-		--hero.health;
+		hero.health -= 10;
+   		monster.speed += 1;
 		reset();
+	} else {
+		(monster.x > hero.x) ? monster.x -= monster.speed * modifier: monster.x += monster.speed * modifier;
+		(monster.y > hero.y) ? monster.y -= monster.speed * modifier: monster.y += monster.speed * modifier;
 	}
 };
 
@@ -112,12 +119,13 @@ var render = function () {
 	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
 	ctx.fillText("Bugs Found: " + monstersCaught, 32, 32);
-	
+ 	
+	// health	
 	ctx.fillStyle = "rgb(0, 102, 255)";
 	ctx.font = "16px proxima-nova, sans-serif";
-	ctx.textAlign = "start";
+	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
-	ctx.fillText("Health: " + hero.health, 32, 32);	
+	ctx.fillText("Health: " + hero.health, 512, 32);	
 };
 
 // The main game loop
