@@ -1,4 +1,5 @@
 
+var socket = io(); // socket for multiplayer!
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
