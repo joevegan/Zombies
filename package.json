@@ -1,0 +1,10 @@
+{
+  "name": "confederates-vs-zombies",
+  "description": "Massively-multiplayer zombies",
+  "author": "Justin Hanley",
+  "version": "0.3.0-5",
+  "dependencies": {
+    "express": "^4.14.0",
+    "socket.io": "^1.5.0"
+  }
+}
