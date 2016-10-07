@@ -4,6 +4,7 @@ var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 640;
+
 /* Set canvas dynamically, not sure if thats a good idea
 ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
@@ -21,8 +22,29 @@ function enemy(speed, x, y, image) {
 		}
 		this.ready = false;
 		this.image = new Image();
-		this.image.onload = function () { this.ready = true;}
 		this.image.src = image;
+}
+
+function item(x,y,type,image) {
+	this.x = x;
+	this.y = y;
+	this.type = type;
+	this.image = new Image();
+	this.image.src = image;
+	this.available = true;
+	this.display = true;
+	this.reset = function() {
+		this.x = -100;
+		this.y = -100;
+		this.available = true;
+	}
+	this.drop = function(x,y) {
+		this.x = x;
+		this.y = y;
+		this.available = false;
+		this.display = true;
+	}
+
 }
 
 function hero() {
@@ -48,29 +70,33 @@ function hero() {
 			this.bulletX = canvas.width;
 			this.bulletY = canvas.height;
 		}
+		this.ready = false;
+		this.image = new Image();
+		this.image.src = "images/hero.png";
 }
-var myHero = new hero();
 
+var myHero = new hero();
+var myItem = new item(-100,-100,"ammo","images/bug.png")
 
 /* load images... */
 // Background image
-var bgReady = false;
 var bgImage = new Image();
-bgImage.onload = function () { bgReady = true; };
 bgImage.src = "images/background.png";
 
 // Bullet image
-var bulletReady = false;
 var bulletImage = new Image();
-bulletImage.onload = function () { bulletReady = true; };
 bulletImage.src = "images/bullet.png";
 
-// Hero
-var heroReady = false;
-var heroImage = new Image();
-heroImage.onload = function () { heroReady = true;};
-heroImage.src = "images/hero.png";
+// Bullet image
+var ammoImage = new Image();
+ammoImage.src = "images/bug.png";
 
+// Returns a random number between min (inclusive) and max (exclusive)
+function getRandomArbitrary(min, max) {
+	return Math.random() * (max - min) + min;
+}
+
+// Hero
 var monstersCaught = 0;
 
 // Handle keyboard controls
@@ -129,8 +155,19 @@ var update = function (modifier) {
 			myHero.resetBullet();
 		}
 
+		/* collisions */
 
-		// collisions
+		// player and item
+		if (
+			myHero.x <= (myItem.x + 32)
+			&& myItem.x <= (myHero.x + 32)
+			&& myHero.y <= (myItem.y + 32)
+			&& myItem.y <= (myHero.y + 32)
+		) {
+			myHero.ammo += 10;
+			myItem.reset();
+		}
+
 		for (var i = 0, len = enimies.length; i < len; i++) {
 
 			// player shoots
@@ -150,6 +187,11 @@ var update = function (modifier) {
 			if (myHero.bulletX <= (enimies[i].x + 32)	&& enimies[i].x <= (myHero.bulletX + 32) &&
 					myHero.bulletY <= (enimies[i].y + 32)	&& enimies[i].y <= (myHero.bulletY + 32)) {
 				++monstersCaught;
+
+				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
+					myItem.drop(enimies[i].x,enimies[i].y);
+				}
+
 				enimies[i].reset();
 				var myEnemy = new enemy(20,
 																32 + (Math.random() * (canvas.width - 64)),
@@ -163,15 +205,17 @@ var update = function (modifier) {
 
 
 			// player and enemy
-			if (
-				myHero.x <= (enimies[i].x + 32)
+			if (myHero.x <= (enimies[i].x + 32)
 				&& enimies[i].x <= (myHero.x + 32)
 				&& myHero.y <= (enimies[i].y + 32)
-				&& enimies[i].y <= (myHero.y + 32)
-			) {
+				&& enimies[i].y <= (myHero.y + 32)) {
 				++monstersCaught;
 				myHero.health -= 1;
+				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
+					myItem.drop(enimies[i].x,enimies[i].y);
+				}
 				enimies[i].reset();
+
 			} else {
 				(enimies[i].x > myHero.x) ? enimies[i].x -= enimies[i].speed * modifier: enimies[i].x += enimies[i].speed * modifier;
 				(enimies[i].y > myHero.y) ? enimies[i].y -= enimies[i].speed * modifier: enimies[i].y += enimies[i].speed * modifier;
@@ -187,24 +231,16 @@ var update = function (modifier) {
 
 // Draw everything
 var render = function () {
-	if (bgReady) {
-		ctx.drawImage(bgImage, 0, 0);
-	}
+	ctx.drawImage(bgImage, 0, 0);
+	ctx.drawImage(myHero.image, myHero.x, myHero.y);
+	ctx.drawImage(bulletImage, myHero.bulletX, myHero.bulletY);
 
-	if (heroReady) {
-		ctx.drawImage(heroImage, myHero.x, myHero.y);
-	}
-
-	if (bulletReady) {
-		ctx.drawImage(bulletImage, myHero.bulletX, myHero.bulletY);
+	if (myItem.display) {
+		ctx.drawImage(myItem.image, myItem.x, myItem.y);
 	}
 
 	for (var i = 0, len = enimies.length; i < len; i++) {
-		if (true) {
-			//ctx.drawImage(enemyImage, enimies[i].x, enimies[i].y);
-			ctx.drawImage(enimies[i].image, enimies[i].x, enimies[i].y);
-
-		}
+	  ctx.drawImage(enimies[i].image, enimies[i].x, enimies[i].y);
 	}
 
 	/* HUD */
@@ -219,7 +255,7 @@ var render = function () {
 	ctx.font = "16px proxima-nova, sans-serif";
 	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
-	ctx.fillText("Ammo: " + myHero.ammo, 32, 64);
+	ctx.fillText("Ammo: " + myHero.ammo, 32, 48);
 
 	// health
 	ctx.fillStyle = "rgb(255, 255, 255)";
