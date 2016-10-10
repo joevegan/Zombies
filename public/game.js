@@ -1,16 +1,25 @@
 
-var socket = io(); // socket for multiplayer!
+var debug = false;
+var clients = [];
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 canvas.width = 800;
 canvas.height = 640;
 
-/* Set canvas dynamically, not sure if thats a good idea
-ctx.canvas.width  = window.innerWidth;
-ctx.canvas.height = window.innerHeight;
-*/
 document.body.appendChild(canvas);
+
+
+// get guid
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
+}
 
 function enemy(speed, x, y, image) {
     this.speed = speed;
@@ -48,20 +57,27 @@ function item(x,y,type,image) {
 
 }
 
-function hero() {
+function hero(name) {
 		this.speed = 256; // movement in pixels per second
 		this.health = 100;
+    this.name = name;
+    this.id = guid();
+    this.socket = io(); // socket for multiplayer
 	  this.bag = [];
 		this.ammo = 20;
 		this.isShooting = false;
+    this.x = 100;
+    this.y = 100;
+    this.bulletDirection = '';
 		this.direction = 'left';
-		this.bulletSpeed = 100;
+		this.bulletSpeed = 500;
 		this.bulletX = canvas.width;
 		this.bulletY = canvas.height;
 		this.shoot = function() {
 			if (this.ammo > 0 && this.isShooting == false) {
 				this.ammo--;
 				this.isShooting = true;
+        this.bulletDirection = this.direction;
 				this.bulletX = this.x;
 				this.bulletY = this.y
 			}
@@ -76,7 +92,13 @@ function hero() {
 		this.image.src = "images/hero.png";
 }
 
-var myHero = new hero();
+/*
+var myHero = new hero('justin');
+socket.emit('join', myHero.name + ' has joined');
+clients.push(myHero);
+*/
+
+
 var myItem = new item(-100,-100,"ammo","images/bug.png")
 
 /* load images... */
@@ -126,115 +148,149 @@ var reset = function () {
 
 // Update game objects
 var update = function (modifier) {
+  // loop through the all the cleints
+  for (var i = 0, len = clients.length; i < len; i++) {
 
-	if ( myHero.health > 0 ) {
-		// player movement
-		if (38 in keysDown && (myHero.y > 32 )) { // Player holding up
-			myHero.y -= myHero.speed * modifier;
-			myHero.direction = 'up';
-		}
-		if (40 in keysDown && myHero.y < (canvas.height - 64)) { // Player holding down
-			myHero.y += myHero.speed * modifier;
-			myHero.direction = 'down';
-		}
-		if (37 in keysDown && (myHero.x > 32) ) { // Player holding left
-			myHero.x -= myHero.speed * modifier;
-			myHero.direction = 'left';
-		}
-		if (39 in keysDown && myHero.x < (canvas.width - 64)) { // Player holding right
-			myHero.x += myHero.speed * modifier;
-			myHero.direction = 'right';
-		}
-		if (90 in keysDown) { // shoot
-			myHero.shoot();
-		}
-		// reset the bullet
-		if (myHero.bulletX > canvas.width || myHero.bulletX < -canvas.width) {
-			myHero.resetBullet();
-		}
-		if (myHero.bulletY > canvas.height || myHero.bulletY < -canvas.height) {
-			myHero.resetBullet();
-		}
+    // for your player
+    if (localStorage.getItem('id') == clients[i].id && clients[i].health > 0  ) {
+      player = clients[i];
+      // player movement
+      if (38 in keysDown && (player.y > 32 )) { // Player holding up
+        player.y -= player.speed * modifier;
+        player.direction = 'up';
+      }
+      if (40 in keysDown && player.y < (canvas.height - 64)) { // Player holding down
+        player.y += player.speed * modifier;
+        player.direction = 'down';
+      }
+      if (37 in keysDown && (player.x > 32) ) { // Player holding left
+        player.x -= player.speed * modifier;
+        player.direction = 'left';
+      }
+      if (39 in keysDown && player.x < (canvas.width - 64)) { // Player holding right
+        player.x += player.speed * modifier;
+        player.direction = 'right';
+      }
+      if (90 in keysDown) { // shoot
+        player.shoot();
+      }
+      // reset the bullet
+      if (player.bulletX > canvas.width || player.bulletX < -canvas.width) {
+        player.resetBullet();
+      }
+      if (player.bulletY > canvas.height || player.bulletY < -canvas.height) {
+        player.resetBullet();
+      }
 
-		/* collisions */
+      // player and item
+      if (
+        player.x <= (myItem.x + 32)
+        && player.x <= (myItem.x + 32)
+        && player.y <= (myItem.y + 32)
+        && player.y <= (myItem.y + 32)
+      ) {
+        player.ammo += 10;
+        myItem.reset();
+      }
 
-		// player and item
-		if (
-			myHero.x <= (myItem.x + 32)
-			&& myItem.x <= (myHero.x + 32)
-			&& myHero.y <= (myItem.y + 32)
-			&& myItem.y <= (myHero.y + 32)
-		) {
-			myHero.ammo += 10;
-			myItem.reset();
-		}
+      // player shoots
+      if (player.isShooting == true) {
+        if (player.bulletDirection == 'right') {
+          player.bulletX += player.bulletSpeed * modifier;
+        } else if (player.bulletDirection == 'left') {
+          player.bulletX -= player.bulletSpeed * modifier;
+        } else if (player.bulletDirection == 'up') {
+          player.bulletY -= player.bulletSpeed * modifier;
+        } else if (player.bulletDirection == 'down') {
+          player.bulletY += player.bulletSpeed * modifier;
+        }
 
-		for (var i = 0, len = enimies.length; i < len; i++) {
+      }
+      /* collisions */
+  		for (var i = 0, len = enimies.length; i < len; i++) {
 
-			// player shoots
-			if (myHero.isShooting == true) {
-				if (myHero.direction =='right') {
-					myHero.bulletX += myHero.bulletSpeed * modifier;
-				} else if (myHero.direction == 'left') {
-					myHero.bulletX -= myHero.bulletSpeed * modifier;
-				} else if (myHero.direction == 'up') {
-					myHero.bulletY -= myHero.bulletSpeed * modifier;
-				} else if (myHero.direction == 'down') {
-					myHero.bulletY += myHero.bulletSpeed * modifier;
-				}
+  			// bullet and enemy
+  			if (player.bulletX <= (enimies[i].x + 32)	&& enimies[i].x <= (player.bulletX + 32) &&
+  					player.bulletY <= (enimies[i].y + 32)	&& enimies[i].y <= (player.bulletY + 32)) {
+  				++monstersCaught;
 
-			}
-			// bullet and enemy
-			if (myHero.bulletX <= (enimies[i].x + 32)	&& enimies[i].x <= (myHero.bulletX + 32) &&
-					myHero.bulletY <= (enimies[i].y + 32)	&& enimies[i].y <= (myHero.bulletY + 32)) {
-				++monstersCaught;
+  				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
+  					myItem.drop(enimies[i].x,enimies[i].y);
+  				}
 
-				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
-					myItem.drop(enimies[i].x,enimies[i].y);
-				}
+  				enimies[i].reset();
+  				var myEnemy = new enemy(20,
+  																32 + (Math.random() * (canvas.width - 64)),
+  																32 + (Math.random() * (canvas.height - 64)),
+  																"images/monster2.png");
+  				myEnemy.reset();
+  				enimies.push(myEnemy);
+  				player.resetBullet();
 
-				enimies[i].reset();
-				var myEnemy = new enemy(20,
-																32 + (Math.random() * (canvas.width - 64)),
-																32 + (Math.random() * (canvas.height - 64)),
-																"images/monster2.png");
-				myEnemy.reset();
-				enimies.push(myEnemy);
-				myHero.resetBullet();
+  			}
 
-			}
+  			// player and enemy
+  			if (player.x <= (enimies[i].x + 32)
+  				&& enimies[i].x <= (player.x + 32)
+  				&& player.y <= (enimies[i].y + 32)
+  				&& enimies[i].y <= (player.y + 32)) {
+  				++monstersCaught;
+  				player.health -= 1;
+  				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
+  					myItem.drop(enimies[i].x,enimies[i].y);
+  				}
+  				enimies[i].reset();
 
+  			} else {
+  				(enimies[i].x > player.x) ? enimies[i].x -= enimies[i].speed * modifier: enimies[i].x += enimies[i].speed * modifier;
+  				(enimies[i].y > player.y) ? enimies[i].y -= enimies[i].speed * modifier: enimies[i].y += enimies[i].speed * modifier;
+  			}
+  		}
+  	} else {
+  		// player is dead
+  		window.location.replace("index.html");
 
-			// player and enemy
-			if (myHero.x <= (enimies[i].x + 32)
-				&& enimies[i].x <= (myHero.x + 32)
-				&& myHero.y <= (enimies[i].y + 32)
-				&& enimies[i].y <= (myHero.y + 32)) {
-				++monstersCaught;
-				myHero.health -= 1;
-				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
-					myItem.drop(enimies[i].x,enimies[i].y);
-				}
-				enimies[i].reset();
+  	}
+  } // end loop through clients
 
-			} else {
-				(enimies[i].x > myHero.x) ? enimies[i].x -= enimies[i].speed * modifier: enimies[i].x += enimies[i].speed * modifier;
-				(enimies[i].y > myHero.y) ? enimies[i].y -= enimies[i].speed * modifier: enimies[i].y += enimies[i].speed * modifier;
-			}
-		}
-	} else {
-		// player is dead
-		window.location.replace("index.html");
-
-	}
 
 };
 
 // Draw everything
 var render = function () {
 	ctx.drawImage(bgImage, 0, 0);
-	ctx.drawImage(myHero.image, myHero.x, myHero.y);
-	ctx.drawImage(bulletImage, myHero.bulletX, myHero.bulletY);
+
+  for (var i = 0, len = clients.length; i < len; i++) {
+    player = clients[i];
+    ctx.drawImage(player.image, player.x, player.y);
+    ctx.drawImage(bulletImage, player.bulletX, player.bulletY);
+
+    /* HUD */
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.font = "16px proxima-nova, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Zombies Killed: " + monstersCaught, 32, 32);
+
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.font = "16px proxima-nova, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Ammo: " + player.ammo, 32, 48);
+
+    // health
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.font = "16px proxima-nova, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Health: " + player.health, 512, 32);
+
+    // log for debugs
+    if (debug) {
+      console.log('hero x,y: ' + player.x  + ',' + player.y);
+      console.log('bullet x,y: ' + player.bulletX  + ',' + player.bulletY);
+    }
+  }
 
 	if (myItem.display) {
 		ctx.drawImage(myItem.image, myItem.x, myItem.y);
@@ -244,26 +300,6 @@ var render = function () {
 	  ctx.drawImage(enimies[i].image, enimies[i].x, enimies[i].y);
 	}
 
-	/* HUD */
-	// Score
-	ctx.fillStyle = "rgb(255, 255, 255)";
-	ctx.font = "16px proxima-nova, sans-serif";
-	ctx.textAlign = "left";
-	ctx.textBaseline = "top";
-	ctx.fillText("Zombies Killed: " + monstersCaught, 32, 32);
-
-	ctx.fillStyle = "rgb(255, 255, 255)";
-	ctx.font = "16px proxima-nova, sans-serif";
-	ctx.textAlign = "left";
-	ctx.textBaseline = "top";
-	ctx.fillText("Ammo: " + myHero.ammo, 32, 48);
-
-	// health
-	ctx.fillStyle = "rgb(255, 255, 255)";
-	ctx.font = "16px proxima-nova, sans-serif";
-	ctx.textAlign = "left";
-	ctx.textBaseline = "top";
-	ctx.fillText("Health: " + myHero.health, 512, 32);
 };
 
 // The main game loop
@@ -280,10 +316,6 @@ var main = function () {
 	// Request to do this again ASAP
 	requestAnimationFrame(main);
 
-	// log for debugs
-	console.log('hero x,y: ' + myHero.x  + ',' + myHero.y);
-	console.log('bullet x,y: ' + myHero.bulletX  + ',' + myHero.bulletY);
-
  };
 
 // Cross-browser support for requestAnimationFrame
@@ -293,6 +325,4 @@ requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame
 // Let's play this game!
 var then = Date.now();
 reset();
-myHero.x = canvas.width / 2;
-myHero.y = canvas.height / 2;
 main();

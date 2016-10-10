@@ -1,0 +1,37 @@
+
+table#score
+  thead
+    tr
+      th( colspan=2 ) Leaderboard
+  tbody
+
+canvas
+
+.dialogs
+  #splash.dialog
+    h1 Zombies!
+    h2 MMO Zombies!
+    form
+      - text = 'name your hero'
+      input( type='text', name='name', value=text, placeholder=text, autofocus='autofocus' )
+      input( type='submit', value='play' )
+
+
+script( type="text/javascript" ).
+  $.fx.speeds._default = 200;
+  $(function() {
+    $('#splash').fadeIn();
+    if (localStorage.name)
+      $('input[name=name]').val(localStorage.name).select();
+    Lz.controller = c = new Lz.Controller($('canvas').get(0));
+    $('form').submit(function() {
+      c.setName(localStorage.name = $('input[name=name]', this).val());
+      c.setupInput();
+      $('#splash').fadeOut();
+      return false;
+    });
+    $('a.help').click(function() {
+      $('#help').animate({ opacity: 'toggle' });
+      return false;
+    });
+  });

@@ -1,17 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<link rel="stylesheet" type="text/css" href="/main.css">
+		<link rel="stylesheet" type="text/css" href="main.css">
 		<meta charset="utf-8">
-		<title>Confederates Vs. Zombies</title>
+		<title>Zombies MMO</title>
 	</head>
-
 	<body>
-	    <div class="container">
-		    <div style="width:50%; margin:0 auto;">
-			    <h1>Confederates Vs. Zombies</h1>
-        	    <a class="button" href="game.html">Start</a>
-		    </div>
-        </div>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<dialog id="splash" style="display:block; margin-top:100px;">
+			<h1>Zombies!</h1>
+			<h2>MMO Zombies!</h2>
+			<form id="startForm">
+				<input id="name" type="text" placeholder="name your hero" />
+				<input type="submit" value="play" />
+			</form>
+		</dialog>
+		<script src="game.js"></script>
+
+		<script type="text/javascript">
+		  $(function() {
+		    $('#splash').fadeIn();
+				$( "#startForm" ).submit(function( event ) {
+					event.preventDefault();
+
+					var myHero = new hero($('#name').val());
+					localStorage.setItem("id", myHero.id);
+					myHero.socket.emit('join', myHero.name + ' has joined');
+					clients.push(myHero);
+					$('#splash').fadeOut();
+
+
+				});
+
+		  });
+
+		</script>
+
 	</body>
 </html>
