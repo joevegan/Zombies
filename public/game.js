@@ -4,9 +4,15 @@ var clients = [];
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
+var _d;
+_d = [$(window).width(), $(window).height()];
+this.canvas.width = _d[0];
+this.canvas.height = _d[1];
+
+/*
 canvas.width = 800;
 canvas.height = 640;
-
+*/
 document.body.appendChild(canvas);
 
 
@@ -23,16 +29,27 @@ function guid() {
 
 function enemy(speed, x, y, image) {
     this.speed = speed;
+    this.maxspeed = 256;
+    this.radius = 300;
     this.x = x;
     this.y = y;
 		this.reset = function() {
 			this.x = canvas.height + (Math.random() * canvas.width);
 			this.y = canvas.width + (Math.random() * canvas.height);
-			this.speed += 5;
+			this.speed < this.maxSpeed ? this.speed += 5 : this.maxSpeed;
 		}
 		this.ready = false;
 		this.image = new Image();
 		this.image.src = image;
+}
+
+function tree(x,y,image) {
+  this.x = x;
+  this.y = y;
+  this.ready = false;
+  this.image = new Image();
+  this.image.src = image;
+
 }
 
 function item(x,y,type,image) {
@@ -57,6 +74,16 @@ function item(x,y,type,image) {
 
 }
 
+function bullet(x,y,direction) {
+  this.x = x;
+  this.y = y;
+  this.direction = direction;
+  this.speed = 500;
+  this.ready = false;
+  this.image = new Image();
+  this.image.src = "images/bullet.png";
+}
+
 function hero(name) {
 		this.speed = 256; // movement in pixels per second
 		this.health = 100;
@@ -70,34 +97,19 @@ function hero(name) {
     this.y = 100;
     this.bulletDirection = '';
 		this.direction = 'left';
-		this.bulletSpeed = 500;
-		this.bulletX = canvas.width;
-		this.bulletY = canvas.height;
+    this.bullets = [];
 		this.shoot = function() {
-			if (this.ammo > 0 && this.isShooting == false) {
-				this.ammo--;
-				this.isShooting = true;
-        this.bulletDirection = this.direction;
-				this.bulletX = this.x;
-				this.bulletY = this.y
-			}
-		}
-		this.resetBullet = function() {
-			this.isShooting = false;
-			this.bulletX = canvas.width;
-			this.bulletY = canvas.height;
+      if (this.ammo > 0 && this.isShooting == false ) {
+        var myBullet = new bullet(this.x,this.y, this.direction);
+        this.ammo--;
+        this.isShooting = true;
+        this.bullets.push(myBullet);
+      }
 		}
 		this.ready = false;
 		this.image = new Image();
 		this.image.src = "images/hero.png";
 }
-
-/*
-var myHero = new hero('justin');
-socket.emit('join', myHero.name + ' has joined');
-clients.push(myHero);
-*/
-
 
 var myItem = new item(-100,-100,"ammo","images/bug.png")
 
@@ -134,13 +146,22 @@ addEventListener("keyup", function (e) {
 }, false);
 
 var enimies = [];
+var trees = [];
 
 var reset = function () {
+  for (i=0; i < 500; i++){
+
+    var myTree = new tree(Math.round(getRandomArbitrary(1,3333)),
+                          Math.round(getRandomArbitrary(1,3333)),
+                          "images/tree" + Math.round(getRandomArbitrary(1,6)) + ".png");
+    trees.push(myTree);
+  }
+
 	for (i = 0; i < 10; i++) {
 		var myEnemy = new enemy(10,
 														32 + (Math.random() * (canvas.width - 64)),
 														32 + (Math.random() * (canvas.height - 64)),
-														"images/monster.png");
+														"images/monster" + Math.round(getRandomArbitrary(1,4 )) + ".png");
 		enimies.push(myEnemy);
 	}
 };
@@ -150,7 +171,6 @@ var reset = function () {
 var update = function (modifier) {
   // loop through the all the cleints
   for (var i = 0, len = clients.length; i < len; i++) {
-
     // for your player
     if (localStorage.getItem('id') == clients[i].id && clients[i].health > 0  ) {
       player = clients[i];
@@ -174,83 +194,84 @@ var update = function (modifier) {
       if (90 in keysDown) { // shoot
         player.shoot();
       }
-      // reset the bullet
-      if (player.bulletX > canvas.width || player.bulletX < -canvas.width) {
-        player.resetBullet();
-      }
-      if (player.bulletY > canvas.height || player.bulletY < -canvas.height) {
-        player.resetBullet();
-      }
-
-      // player and item
-      if (
-        player.x <= (myItem.x + 32)
-        && player.x <= (myItem.x + 32)
-        && player.y <= (myItem.y + 32)
-        && player.y <= (myItem.y + 32)
-      ) {
-        player.ammo += 10;
-        myItem.reset();
-      }
-
-      // player shoots
-      if (player.isShooting == true) {
-        if (player.bulletDirection == 'right') {
-          player.bulletX += player.bulletSpeed * modifier;
-        } else if (player.bulletDirection == 'left') {
-          player.bulletX -= player.bulletSpeed * modifier;
-        } else if (player.bulletDirection == 'up') {
-          player.bulletY -= player.bulletSpeed * modifier;
-        } else if (player.bulletDirection == 'down') {
-          player.bulletY += player.bulletSpeed * modifier;
-        }
-
-      }
-      /* collisions */
-  		for (var i = 0, len = enimies.length; i < len; i++) {
-
-  			// bullet and enemy
-  			if (player.bulletX <= (enimies[i].x + 32)	&& enimies[i].x <= (player.bulletX + 32) &&
-  					player.bulletY <= (enimies[i].y + 32)	&& enimies[i].y <= (player.bulletY + 32)) {
-  				++monstersCaught;
-
-  				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
-  					myItem.drop(enimies[i].x,enimies[i].y);
-  				}
-
-  				enimies[i].reset();
-  				var myEnemy = new enemy(20,
-  																32 + (Math.random() * (canvas.width - 64)),
-  																32 + (Math.random() * (canvas.height - 64)),
-  																"images/monster2.png");
-  				myEnemy.reset();
-  				enimies.push(myEnemy);
-  				player.resetBullet();
-
-  			}
-
-  			// player and enemy
-  			if (player.x <= (enimies[i].x + 32)
-  				&& enimies[i].x <= (player.x + 32)
-  				&& player.y <= (enimies[i].y + 32)
-  				&& enimies[i].y <= (player.y + 32)) {
-  				++monstersCaught;
-  				player.health -= 1;
-  				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
-  					myItem.drop(enimies[i].x,enimies[i].y);
-  				}
-  				enimies[i].reset();
-
-  			} else {
-  				(enimies[i].x > player.x) ? enimies[i].x -= enimies[i].speed * modifier: enimies[i].x += enimies[i].speed * modifier;
-  				(enimies[i].y > player.y) ? enimies[i].y -= enimies[i].speed * modifier: enimies[i].y += enimies[i].speed * modifier;
-  			}
-  		}
-  	} else {
+    } else {
   		// player is dead
-  		window.location.replace("index.html");
-
+  		window.location.replace("/");
   	}
+
+    // player and item
+    if ( player.x <= (myItem.x + 32) && player.x <= (myItem.x + 32)  && player.y <= (myItem.y + 32) && player.y <= (myItem.y + 32) ) {
+      player.ammo += 10;
+      myItem.reset();
+    }
+
+    // moved bullets
+    for (var i = 0, len = player.bullets.length; i < len; i++) {
+        if (player.bullets[i].direction == 'right') {
+          player.bullets[i].x += player.bullets[i].speed * modifier;
+        } else if (player.bullets[i].direction == 'left') {
+          player.bullets[i].x -= player.bullets[i].speed * modifier;
+        } else if (player.bullets[i].direction == 'up') {
+          player.bullets[i].y -= player.bullets[i].speed * modifier;
+        } else if (player.bullets[i].direction == 'down') {
+          player.bullets[i].y += player.bullets[i].speed * modifier;
+        }
+    }
+
+
+    // enimies
+		for (var i = 0, len = enimies.length; i < len; i++) {
+
+      // for the bad guy getting killed with bullets
+      /*
+      for (var j = 0, len = player.bullets.length; j < len; j++) {
+        if (player.bullets[j].x <= (enimies[i].x + 32)	&& enimies[i].x <= (player.bullets[j].x + 32) &&
+            player.bullets[j].y <= (enimies[i].y + 32)	&& enimies[i].y <= (player.bullets[j].y + 32)) {
+          ++monstersCaught;
+
+          if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
+            myItem.drop(enimies[i].x,enimies[i].y);
+          }
+
+          enimies[i].reset();
+          var myEnemy = new enemy(100,
+                                  32 + (Math.random() * (canvas.width - 64)),
+                                  32 + (Math.random() * (canvas.height - 64)),
+                                  "images/monster" + Math.round(getRandomArbitrary(1,4)) + ".png");
+          myEnemy.reset();
+          enimies.push(myEnemy);
+          //player.resetBullet();
+
+        }
+      }
+      */
+
+
+			// for the bad guy getting to the player
+			if (player.x <= (enimies[i].x + 32)	&& enimies[i].x <= (player.x + 32)
+				&& player.y <= (enimies[i].y + 32) && enimies[i].y <= (player.y + 32)) {
+
+				++monstersCaught;
+				player.health -= 1;
+				if (getRandomArbitrary(1,10) < 5 && myItem.available == true) {
+					myItem.drop(enimies[i].x,enimies[i].y);
+				}
+				enimies[i].reset();
+			} else if (Math.abs(enimies[i].x - player.x) < enimies[i].radius && Math.abs(enimies[i].y - player.y) < enimies[i].radius ) {
+				  (enimies[i].x > player.x) ? enimies[i].x -= (enimies[i].speed) * modifier: enimies[i].x += enimies[i].speed * modifier;
+				  (enimies[i].y > player.y) ? enimies[i].y -= (enimies[i].speed) * modifier: enimies[i].y += enimies[i].speed * modifier;
+
+      } else {
+          if (enimies[i].x > canvas.width) {enimies[i].x = canvas.width;}
+          if (enimies[i].y > canvas.height) {enimies[i].y = canvas.height;}
+          if (enimies[i].x < 0) {enimies[i].x = 0;}
+          if (enimies[i].y < 0) {enimies[i].y = 0;}
+          enimies[i].x += enimies[i].speed/2 * modifier * getRandomArbitrary(-10,10);
+          enimies[i].y += enimies[i].speed/2 * modifier * getRandomArbitrary(-10,10);
+      }
+    }
+
+
   } // end loop through clients
 
 
@@ -258,12 +279,28 @@ var update = function (modifier) {
 
 // Draw everything
 var render = function () {
-	ctx.drawImage(bgImage, 0, 0);
+	//ctx.drawImage(bgImage, 0, 0);
+  ctx.fillStyle = "green";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fill();
+
+
+  //draw things in the right order...
+  var elements = [];
+  elements.push.apply(elements,trees);
+  elements.push.apply(elements,enimies);
+  elements.push.apply(elements,clients);
 
   for (var i = 0, len = clients.length; i < len; i++) {
-    player = clients[i];
-    ctx.drawImage(player.image, player.x, player.y);
-    ctx.drawImage(bulletImage, player.bulletX, player.bulletY);
+    elements.push.apply(elements,clients[i].bullets);
+  }
+
+  elements = elements.sort(function(a,b) {return (a.y + a.image.height/2 > b.y + b.image.height/2) ? 1 : ((b.y + b.image.height/2 > a.y + a.image.height/2 ) ? -1 : 0);} );
+  for (var i = 0, len = elements.length; i < len; i++) {
+    ctx.drawImage(elements[i].image, elements[i].x, elements[i].y);
+  }
+
+  for (var i = 0, len = clients.length; i < len; i++) {
 
     /* HUD */
     ctx.fillStyle = "rgb(255, 255, 255)";
@@ -284,23 +321,19 @@ var render = function () {
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     ctx.fillText("Health: " + player.health, 512, 32);
-
     // log for debugs
     if (debug) {
       console.log('hero x,y: ' + player.x  + ',' + player.y);
-      console.log('bullet x,y: ' + player.bulletX  + ',' + player.bulletY);
+      //console.log('bullet x,y: ' + player.bulletX  + ',' + player.bulletY);
     }
+
   }
 
-	if (myItem.display) {
-		ctx.drawImage(myItem.image, myItem.x, myItem.y);
-	}
-
-	for (var i = 0, len = enimies.length; i < len; i++) {
-	  ctx.drawImage(enimies[i].image, enimies[i].x, enimies[i].y);
-	}
-
+  if (myItem.display) {
+    ctx.drawImage(myItem.image, myItem.x, myItem.y);
+  }
 };
+
 
 // The main game loop
 var main = function () {
