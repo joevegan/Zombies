@@ -1,37 +1,39 @@
-
-table#score
-  thead
-    tr
-      th( colspan=2 ) Leaderboard
-  tbody
-
 canvas
 
+doctype html
+head
+  title Zombies MMO
+  meta( name='apple-mobile-web-app-capable', content='yes' )
+  meta( name='apple-mobile-web-app-status-bar-style', content='black-translucent' )
+  link( href='//fonts.googleapis.com/css?family=IM+Fell+Great+Primer:400,400italic', rel='stylesheet', type='text/css' )
+  link( href='stylesheets/application.css', rel='stylesheet', type='text/css' )
+  script( src='//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js', type='text/javascript' )
+  script( src='/socket.io/socket.io.js', type='text/javascript' )
+  script( src='/javascripts/underscore.js', type='text/javascript' )
+  script( src='/game.js', type='text/javascript' )
+body!= body
 .dialogs
   #splash.dialog
     h1 Zombies!
     h2 MMO Zombies!
     form
       - text = 'name your hero'
-      input( type='text', name='name', value=text, placeholder=text, autofocus='autofocus' )
+      input( type='text', id='name' name='name', value=text, placeholder=text, autofocus='autofocus' )
       input( type='submit', value='play' )
 
-
 script( type="text/javascript" ).
-  $.fx.speeds._default = 200;
   $(function() {
     $('#splash').fadeIn();
-    if (localStorage.name)
-      $('input[name=name]').val(localStorage.name).select();
-    Lz.controller = c = new Lz.Controller($('canvas').get(0));
     $('form').submit(function() {
-      c.setName(localStorage.name = $('input[name=name]', this).val());
-      c.setupInput();
+      event.preventDefault();
+      Game.controller = c = new Game.Controller($('canvas').get(0));
+      var myHero = new hero($('#name').val());
+      localStorage.setItem("id", myHero.id);
+      myHero.socket.emit('join', myHero.name + ' has joined');
+      clients.push(myHero);
+      //Game.clients.push(myHero);
       $('#splash').fadeOut();
-      return false;
+
     });
-    $('a.help').click(function() {
-      $('#help').animate({ opacity: 'toggle' });
-      return false;
-    });
+
   });

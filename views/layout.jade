@@ -1,11 +1,13 @@
 !!! 5
 html
   head
-    title Zombies!!! &mdash; MMO Zombies
+    title LAZEROIDS!!! &mdash; massively-multiplayer html5 asteroids
+    meta( name='apple-mobile-web-app-capable', content='yes' )
+    meta( name='apple-mobile-web-app-status-bar-style', content='black-translucent' )
     link( href='//fonts.googleapis.com/css?family=IM+Fell+Great+Primer:400,400italic', rel='stylesheet', type='text/css' )
     link( href='stylesheets/application.css', rel='stylesheet', type='text/css' )
-    script() src='https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js')
     script( src='//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js', type='text/javascript' )
     script( src='/socket.io/socket.io.js', type='text/javascript' )
-    script( src='//game.js', type='text/javascript' )
+    script( src='/javascripts/underscore.js', type='text/javascript' )
+    script( src='/game.js', type='text/javascript' )
   body!= body

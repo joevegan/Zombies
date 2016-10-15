@@ -1,18 +1,26 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var _ = require('underscore-node');
+io = require('socket.io').listen(http);
 
-
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html');
-});
 
 /*
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/index.html');
+
+});
+*/
+
+
 app.get('/', function(req, res) {
   return res.render('index.jade');
 });
-*/
+
+app.get('/game.js', function(req, res) {
+    return res.sendfile('game.js', {root:__dirname});
+});
+
 
 io.on('connection', function(socket){
   socket.on('join', function(msg){

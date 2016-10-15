@@ -7,6 +7,8 @@
 	</head>
 	<body>
 		<script src="/socket.io/socket.io.js"></script>
+		<script src="/javascripts/underscore.js"></script>
+
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 		<dialog id="splash" style="display:block; margin-top:100px;">
 			<h1>Zombies!</h1>
@@ -28,6 +30,7 @@
 					localStorage.setItem("id", myHero.id);
 					myHero.socket.emit('join', myHero.name + ' has joined');
 					clients.push(myHero);
+
 					$('#splash').fadeOut();
 
 
